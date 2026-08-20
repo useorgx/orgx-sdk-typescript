@@ -1,0 +1,45 @@
+{
+  "name": "@useorgx/sdk",
+  "version": "1.0.0",
+  "description": "TypeScript client for the OrgX v1 API",
+  "license": "SEE LICENSE IN LICENSE",
+  "author": "OrgX Team <team@useorgx.com>",
+  "homepage": "https://docs.useorgx.com/docs/api/clients",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/useorgx/orgx-sdk-typescript.git"
+  },
+  "bugs": {
+    "url": "https://github.com/useorgx/orgx-sdk-typescript/issues"
+  },
+  "keywords": [
+    "orgx",
+    "api",
+    "sdk",
+    "agents",
+    "work-ledger"
+  ],
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "prepack": "npm run build"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "sideEffects": false
+}

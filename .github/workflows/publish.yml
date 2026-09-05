@@ -3,6 +3,7 @@ name: Publish @useorgx/sdk
 on:
   push:
     tags: ['v*']
+    branches: ['release/v*']
 
 permissions:
   contents: read
@@ -17,7 +18,12 @@ jobs:
         with:
           node-version: 22
           registry-url: https://registry.npmjs.org
-      - run: npm install --no-audit --no-fund typescript
+      - run: npm install --ignore-scripts --no-save --package-lock=false --no-audit --no-fund typescript@5.8.3
+      - run: npm run build
+      - run: node --test tests/*.test.mjs
+      - run: python3 scripts/registry_preflight.py npm --publish
+      - name: Require release ref and package version to agree
+        run: node -e 'if (process.env.GITHUB_REF_NAME.replace(/^release\//, "") !== "v" + require("./package.json").version) process.exit(1)'
       - run: npm publish --access public --provenance
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

@@ -28,257 +28,53 @@ export type {
   WorkLedgerSourceHealth,
 } from './projections.js';
 
-import type {
-  AgentWorkReceipt,
-  Artifact,
-  ArtifactCreateResult,
-  ArtifactDetailResult,
-  ArtifactEntityType,
-  ArtifactStatus,
-  ArtifactTypeListResult,
-  CheckoutResponse,
-  Decision,
-  DecisionShape,
-  DecisionStatus,
-  DecisionUrgency,
-  DedupClaimResult,
-  EstimateResponse,
-  InitiativeCommitData,
-  InitiativeCommitOverrides,
-  InitiativeDetail,
-  InitiativePlan,
-  InitiativeProposal,
-  InitiativeProposalContext,
-  InitiativeProposalDetail,
-  InitiativeProposalWorkstreamInput,
-  InitiativeScaffoldData,
-  InitiativeSourceEvidence,
-  LifecycleAction,
-  LifecycleLevel,
-  LifecycleResult,
-  OperatingMapResult,
-  OperatingProcessDetail,
-  ReceiptImportSuccess,
-  ReceiptValidationResult,
-  ReceiptValidatorMetadata,
-  RunActionResult,
-  RunControlAction,
-  ShowcaseResponse,
-  StudioContentType,
-  WorkloadDiagnosisRequest,
-  WorkloadDiagnosisResponse,
-  WorkloadDoctorMetadata,
-  WorkTask,
-  WorkTaskDetail,
-  WorkTaskStatus,
-} from './types.js';
-
-export * from './types.js';
-
 import type { ContextPreparation, ContextPreparationInput } from './context.js';
-export type { ContextPreparation, ContextPreparationInput, ContextDelivery } from './context.js';
+import {
+  applyContextTransfer,
+  type ContextContinuation,
+} from './continuation.js';
+export {
+  applyContextTransfer,
+  type ContextContinuation,
+} from './continuation.js';
+export type {
+  ContextPreparation,
+  ContextPreparationInput,
+  ContextDelivery,
+} from './context.js';
 
-export type DiscoveryRunMode = 'bounded_sync' | 'deep_search' | 'reconcile';
-export type DiscoveryRunStatus =
-  | 'queued'
-  | 'running'
-  | 'succeeded'
-  | 'partial'
-  | 'failed'
-  | 'cancelled';
-
-export interface SourceHealth {
-  sourceId: string;
-  sourceKind: string;
-  status:
-    | 'connected'
-    | 'syncing'
-    | 'stale'
-    | 'degraded'
-    | 'disconnected'
-    | 'permission_required';
-  cursor: string | null;
-  lastSuccessfulSyncAt: string | null;
-  recordsObserved: number;
-  errorCode: string | null;
-  limitations: string[];
-}
-
-export interface DiscoveryRun {
-  schemaVersion: '1.0.0';
-  id: string;
-  workspaceId: string;
-  mode: DiscoveryRunMode;
-  status: DiscoveryRunStatus;
-  initiatedBy: { type: string; id: string; displayName?: string };
-  query: string | null;
-  sourceKinds: string[];
-  sourceCursors: Record<string, string>;
-  observationCount: number;
-  candidateProcessCardCount: number;
-  citationCount: number;
-  costMicros: string;
-  confidence: number | null;
-  startedAt: string;
-  completedAt: string | null;
-  sourceHealth: SourceHealth[];
-  limitations: string[];
-}
-
-export interface DiscoveryResult {
-  run: DiscoveryRun;
-  observations: Array<Record<string, unknown>>;
-  processCards: Array<Record<string, unknown>>;
-  confirmedProcessRefs: Array<{ id: string; workspaceId: string }>;
-}
-
-export interface OperatingProcess {
-  [key: string]: unknown;
-  id: string;
-  workspaceId: string;
-  lifecycleState: string;
-}
-
-export interface Episode {
-  id: string;
-  initiativeId: string;
-  workspaceId: string;
-  ownerId: string;
-  state: string;
-  contract: Record<string, unknown>;
-  contractDigest: string;
-  plan: Record<string, unknown> | null;
-  planDigest: string | null;
-  aggregateVersion: number;
-  lastEventHash: string;
-  lastEventAt: string;
-  compatibility: {
-    source: 'mission_v1';
-    missionId: string;
-    semantics: 'mission_projection';
-  };
-}
-
-export type HandoffStatus =
-  | 'proposed'
-  | 'claimed'
-  | 'returned'
-  | 'fulfilled'
-  | 'escalated'
-  | 'cancelled';
-export type HandoffPriority = 'low' | 'normal' | 'high' | 'urgent';
-
-export interface Handoff {
-  schemaVersion: '1.0.0';
-  id: string;
-  workspaceId: string;
-  handoffKey: string;
-  fromStageKey: string;
-  toStageKey: string;
-  sourceProcessRef: string | null;
-  sourceRevisionRef: string | null;
-  title: string;
-  summary: string | null;
-  priority: HandoffPriority;
-  slaMinutes: number | null;
-  dueAt: string | null;
-  currentActor: { type: string; id: string; displayName?: string } | null;
-  proofRequirements: Array<Record<string, unknown>>;
-  result: Record<string, unknown> | null;
-  status: HandoffStatus;
-  createdAt: string;
-  updatedAt: string;
-  aggregateVersion?: number;
-}
-
-export interface WorkCommandResult {
-  taskId: string;
-  receiptId: string;
-  eventId: string;
-  aggregateVersion: number;
-  eventHash: string;
-  duplicate: boolean;
-  task: Record<string, unknown>;
-  receipt: Record<string, unknown>;
-}
-
-export interface LedgerEvent {
-  id: string;
-  workspaceId: string;
-  ownerId: string;
-  aggregateType: string;
-  aggregateId: string;
-  aggregateVersion: number;
-  eventType: string;
-  schemaVersion: number;
-  actorType: string;
-  actorId: string;
-  payload: Record<string, unknown>;
-  payloadDigest: string;
-  occurredAtCanonical: string;
-  recordedAt?: string;
-  idempotencyKey: string;
-  causationId: string | null;
-  correlationId: string | null;
-  contextManifestDigest: string | null;
-  previousHash: string | null;
-  eventHash: string;
-}
-
-export interface EventStreamPage {
-  events: LedgerEvent[];
-  nextCursor: string | null;
-  sourceCursor: string | null;
-  hasMore: boolean;
-  limit: number;
-}
-
-export interface EventStreamSubscriptionOptions {
-  after?: string;
-  limit?: number;
-  eventTypes?: string[];
-  aggregateType?: string;
-  streamMs?: number;
-  pollMs?: number;
-  signal?: AbortSignal;
-}
-
-export interface EventStreamSubscription {
-  close(): void;
-  done: Promise<void>;
-}
-
-export interface ApiEnvelope<T> {
-  data: T;
-  meta: {
-    apiVersion: '1';
-    workspaceId: string;
-    duplicate?: boolean;
-    count?: number;
-    requiresConfirmation?: boolean;
-    aggregateVersion?: number;
-    projectionStatus?: string;
-    hasMore?: boolean;
-    nextCursor?: string | null;
-    sourceCursor?: string | null;
-    delivery?: string;
-    ordering?: string;
-    duplicateTolerant?: boolean;
-    limit?: number;
-    generatedAt?: string;
-    sourceCursorStatus?: string;
-    mode?: string;
-    truncated?: boolean;
-    queryMs?: number;
-    freshness?: WorkLedgerProjectionMeta['freshness'];
-    processId?: string;
-    evidenceStatus?: 'measured' | 'insufficient_evidence';
-    freshnessWatermark?: string;
-    revisionId?: string | null;
-    boundEpisodeCount?: number;
-    economicRowCount?: number;
-  };
-}
+export type {
+  DiscoveryRunMode,
+  DiscoveryRunStatus,
+  SourceHealth,
+  DiscoveryRun,
+  DiscoveryResult,
+  OperatingProcess,
+  Episode,
+  HandoffStatus,
+  HandoffPriority,
+  Handoff,
+  WorkCommandResult,
+  LedgerEvent,
+  EventStreamPage,
+  EventStreamSubscriptionOptions,
+  EventStreamSubscription,
+  ApiEnvelope,
+} from './models.js';
+import type {
+  DiscoveryRunMode,
+  DiscoveryResult,
+  OperatingProcess,
+  Episode,
+  HandoffPriority,
+  Handoff,
+  WorkCommandResult,
+  LedgerEvent,
+  EventStreamPage,
+  EventStreamSubscriptionOptions,
+  EventStreamSubscription,
+  ApiEnvelope,
+} from './models.js';
 
 export class OrgXApiError extends Error {
   readonly status: number;
@@ -348,6 +144,51 @@ export interface CreateWorkInput {
   correlationId?: string | null;
 }
 
+export type ControllerDomain =
+  | 'product'
+  | 'engineering'
+  | 'growth'
+  | 'sales'
+  | 'design'
+  | 'operations';
+
+export interface ControllerApiResult {
+  controller_id: string;
+  domain: ControllerDomain;
+  spec_revision: string;
+  run_id: string | null;
+  last_run_id: string | null;
+  status: 'never_run' | 'running' | 'healthy' | 'degraded' | 'failed';
+  result: 'proposal' | 'noop';
+  last_result: 'proposal' | 'noop' | null;
+  last_signal_id: string | null;
+  last_signal_state: 'observed' | 'cleared' | null;
+  last_error_code: string | null;
+  event_ids: string[];
+  projection_cursor: string;
+  decision_id: string | null;
+  decision_event_id: string | null;
+  receipt_id: string | null;
+  last_receipt_id: string | null;
+  duplicate: boolean;
+  protocol_version: 'orgx.controller.v1';
+  mode: 'shadow';
+  proposal: Record<string, unknown> | null;
+  learning_proposal: Record<string, unknown> | null;
+  noop_reason: string | null;
+  source_health: Record<string, unknown> | null;
+  limitations: string[];
+}
+
+export interface ReconcileControllerInput {
+  workspaceId: string;
+  domain: ControllerDomain;
+  idempotencyKey: string;
+  specRevision?: string;
+  inputCursor?: string;
+  maxInputAgeSeconds?: number;
+}
+
 export interface CompleteWorkInput {
   taskId: string;
   expectedUpdatedAt: string;
@@ -358,176 +199,6 @@ export interface CompleteWorkInput {
   causationId?: string | null;
   correlationId?: string | null;
   idempotencyKey: string;
-}
-
-export interface HandoffTransitionInput {
-  workspaceId: string;
-  handoffId: string;
-  expectedAggregateVersion: number;
-  idempotencyKey: string;
-}
-
-export interface ImportAgentWorkReceiptInput {
-  receipt: AgentWorkReceipt;
-  workspaceId?: string;
-  idempotencyKey: string;
-}
-
-export interface CreateEstimateInput {
-  prompt: string;
-  contentTypes: StudioContentType[];
-  variantCount?: number;
-  brandUrl?: string;
-  brandId?: string;
-  platform?:
-    | 'linkedin'
-    | 'instagram'
-    | 'twitter'
-    | 'facebook'
-    | 'youtube'
-    | 'tiktok'
-    | 'generic';
-}
-
-export interface GetShowcaseOptions {
-  query?: string;
-  contentType?: StudioContentType;
-  industry?: 'tech' | 'finance' | 'health' | 'retail' | 'education' | 'other';
-  style?:
-    | 'minimal'
-    | 'corporate'
-    | 'playful'
-    | 'elegant'
-    | 'bold'
-    | 'artistic';
-  featured?: boolean;
-  limit?: number;
-  offset?: number;
-}
-
-export interface ListWorkOptions {
-  initiativeId?: string;
-  status?: WorkTaskStatus;
-  updatedSince?: string;
-  cursor?: string;
-  limit?: number;
-}
-
-export interface ScaffoldInitiativeInput {
-  title: string;
-  workspaceId?: string;
-  summary?: string | null;
-  idempotencyKey: string;
-}
-
-export interface CommitInitiativeProposalInput {
-  proposalId: string;
-  proposalDigest: string;
-  workspaceId?: string;
-  initiativeId?: string;
-  overrides?: InitiativeCommitOverrides;
-  idempotencyKey: string;
-}
-
-export interface CommitInitiativePlanInput {
-  plan: InitiativePlan;
-  planDigest: string;
-  workspaceId?: string;
-  initiativeId?: string;
-  overrides?: InitiativeCommitOverrides;
-  idempotencyKey: string;
-}
-
-export interface ProposeInitiativeScaffoldInput {
-  title: string;
-  workspaceId?: string;
-  summary?: string | null;
-  prompt?: string;
-  goalIds?: string[];
-  context?: InitiativeProposalContext;
-  depth?: 'initiative' | 'workstreams' | 'full';
-  workstreams?: InitiativeProposalWorkstreamInput[];
-  agentAssignment?: 'auto' | 'none';
-  generation?: {
-    model_tier?: 'standard' | 'balanced' | 'precision';
-    max_workstreams?: number;
-  };
-  sourceEvidence?: InitiativeSourceEvidence;
-  idempotencyKey: string;
-}
-
-export interface CreateDecisionInput {
-  workspaceId: string;
-  title: string;
-  shape?: DecisionShape;
-  shapeContext?: Record<string, unknown>;
-  urgency?: DecisionUrgency;
-  blocksTask?: boolean;
-  taskId?: string;
-  initiativeId?: string;
-  idempotencyKey?: string;
-}
-
-export interface ListDecisionsOptions {
-  shape?: string;
-  urgency?: DecisionUrgency;
-  status?: DecisionStatus;
-  limit?: number;
-}
-
-export interface CreateArtifactInput {
-  entityType: ArtifactEntityType;
-  entityId: string;
-  name: string;
-  artifactType: string;
-  artifactUrl?: string;
-  externalUrl?: string;
-  previewMarkdown?: string;
-  initiativeId?: string;
-  status?: 'draft' | 'in_review' | 'changes_requested' | 'superseded' | 'archived';
-  metadata?: Record<string, unknown>;
-  createdByType?: 'human' | 'agent';
-  createdById?: string;
-  idempotencyKey?: string;
-}
-
-export interface ListArtifactsOptions {
-  initiativeId?: string;
-  taskId?: string;
-  status?: Exclude<ArtifactStatus, 'eval_passed'>;
-  since?: string;
-  limit?: number;
-}
-
-export interface ListArtifactsByEntityInput {
-  entityType: ArtifactEntityType;
-  entityId: string;
-  kind?: string;
-  limit?: number;
-}
-
-export interface ControlRunInput {
-  runId: string;
-  action: RunControlAction;
-  checkpointId?: string;
-  reason?: string;
-  idempotencyKey?: string;
-}
-
-export interface ApplyLifecycleActionInput {
-  level: LifecycleLevel;
-  id: string;
-  action: LifecycleAction;
-  idempotencyKey?: string;
-}
-
-export interface ClaimDedupFingerprintInput {
-  source: string;
-  eventKey: string;
-  initiativeId?: string;
-  ttlSeconds?: number;
-  activeRunId?: string;
-  idempotencyKey?: string;
 }
 
 export class OrgXClient {
@@ -545,22 +216,70 @@ export class OrgXClient {
   }
 
   /** Prepare current context. Returned references do not grant action authority. */
-  async prepareContext(input: ContextPreparationInput): Promise<ContextPreparation> {
-    const response = await this.request<ApiEnvelope<ContextPreparation>>('/context-pack', {
-      method: 'POST', body: input,
-    });
+  async prepareContext(
+    input: ContextPreparationInput
+  ): Promise<ContextPreparation> {
+    const response = await this.request<ApiEnvelope<ContextPreparation>>(
+      '/context-pack',
+      {
+        method: 'POST',
+        body: input,
+      }
+    );
     return response.data;
   }
 
-  /** Safe full rebootstrap until the server can verify a coherent delta base. */
-  async syncContext(input: ContextPreparationInput & { acknowledged_capsule_id: string }): Promise<ContextPreparation> {
-    return this.prepareContext(input);
+  /** Existing capsule acknowledgements remain a full rebootstrap. */
+  async syncContext(
+    input: ContextPreparationInput & { acknowledged_capsule_id: string }
+  ): Promise<ContextPreparation>;
+  /** Pass null for a fresh portable base; pass that result for acknowledged deltas. */
+  async syncContext(
+    input: ContextPreparationInput,
+    previous: ContextContinuation | null
+  ): Promise<ContextContinuation>;
+  async syncContext(
+    input: ContextPreparationInput,
+    previous?: ContextContinuation | null
+  ): Promise<ContextPreparation | ContextContinuation> {
+    if (previous === undefined) return this.prepareContext(input);
+    const {
+      acknowledged_capsule_id: _legacy,
+      acknowledged_context_version: _version,
+      ...scope
+    } = input;
+    const response = await this.prepareContext({
+      ...scope,
+      delivery_mode: 'delta',
+      ...(previous ? { acknowledged_context_version: previous.version } : {}),
+    });
+    try {
+      return await applyContextTransfer(response, previous);
+    } catch (error) {
+      if (!previous) throw error;
+      // One authenticated fresh read repairs an evicted or corrupted local base.
+      return applyContextTransfer(
+        await this.prepareContext({ ...scope, delivery_mode: 'delta' })
+      );
+    }
   }
 
   /** Dereference an OrgX artifact through the existing authenticated API. */
-  async expandContextEvidence(artifactId: string): Promise<Record<string, unknown>> {
+  async expandContextEvidence(
+    artifactId: string,
+    expectedVersion?: number
+  ): Promise<Record<string, unknown>> {
+    if (
+      expectedVersion !== undefined &&
+      (!Number.isSafeInteger(expectedVersion) || expectedVersion < 1)
+    )
+      throw new Error('Artifact version must be a positive integer');
     const response = await this.request<ApiEnvelope<Record<string, unknown>>>(
-      `/artifacts/${encodeURIComponent(artifactId)}`
+      `/artifacts/${encodeURIComponent(artifactId)}${
+        expectedVersion === undefined
+          ? ''
+          : `?expected_version=${expectedVersion}`
+      }`
     );
     return response.data;
   }
@@ -865,6 +584,42 @@ export class OrgXClient {
     );
   }
 
+  async getControllerStatus(
+    workspaceId: string,
+    domain: ControllerDomain
+  ): Promise<ApiEnvelope<ControllerApiResult>> {
+    const params = new URLSearchParams({
+      workspace_id: workspaceId,
+      protocol_version: 'orgx.controller.v1',
+    });
+    return this.request<ApiEnvelope<ControllerApiResult>>(
+      `/controllers/${encodeURIComponent(domain)}?${params.toString()}`
+    );
+  }
+
+  async reconcileController(
+    input: ReconcileControllerInput
+  ): Promise<ApiEnvelope<ControllerApiResult>> {
+    return this.request<ApiEnvelope<ControllerApiResult>>(
+      `/controllers/${encodeURIComponent(input.domain)}/reconcile`,
+      {
+        method: 'POST',
+        idempotencyKey: input.idempotencyKey,
+        body: {
+          workspace_id: input.workspaceId,
+          idempotency_key: input.idempotencyKey,
+          protocol_version: 'orgx.controller.v1',
+          mode: 'shadow',
+          ...(input.specRevision ? { spec_revision: input.specRevision } : {}),
+          ...(input.inputCursor ? { input_cursor: input.inputCursor } : {}),
+          ...(input.maxInputAgeSeconds !== undefined
+            ? { max_input_age_seconds: input.maxInputAgeSeconds }
+            : {}),
+        },
+      }
+    );
+  }
+
   async listHandoffs(workspaceId: string): Promise<Handoff[]> {
     const response = await this.request<ApiEnvelope<Handoff[]>>(
       `/handoffs?workspace_id=${encodeURIComponent(workspaceId)}`
@@ -1035,441 +790,6 @@ export class OrgXClient {
     return this.transitionOperatingProcess('activate', input);
   }
 
-  async getOperatingProcess(
-    workspaceId: string,
-    processId: string
-  ): Promise<OperatingProcessDetail> {
-    const response = await this.request<ApiEnvelope<OperatingProcessDetail>>(
-      `/operating-processes/${encodeURIComponent(
-        processId
-      )}?workspace_id=${encodeURIComponent(workspaceId)}`
-    );
-    return response.data;
-  }
-
-  async getOperatingMap(
-    workspaceId: string,
-    options: { limit?: number } = {}
-  ): Promise<OperatingMapResult> {
-    const params = new URLSearchParams({ workspace_id: workspaceId });
-    if (options.limit !== undefined) params.set('limit', String(options.limit));
-    return this.request<OperatingMapResult>(
-      `/operating-map?${params.toString()}`
-    );
-  }
-
-  async returnHandoff(input: HandoffTransitionInput): Promise<Handoff> {
-    return this.transitionHandoff('return', input);
-  }
-
-  async escalateHandoff(input: HandoffTransitionInput): Promise<Handoff> {
-    return this.transitionHandoff('escalate', input);
-  }
-
-  async cancelHandoff(input: HandoffTransitionInput): Promise<Handoff> {
-    return this.transitionHandoff('cancel', input);
-  }
-
-  async importAgentWorkReceipt(
-    input: ImportAgentWorkReceiptInput
-  ): Promise<ReceiptImportSuccess> {
-    return this.request<ReceiptImportSuccess>('/agent-work-receipts', {
-      method: 'POST',
-      idempotencyKey: input.idempotencyKey,
-      body: {
-        ...(input.workspaceId ? { workspace_id: input.workspaceId } : {}),
-        receipt: input.receipt,
-      },
-    });
-  }
-
-  async getReceiptValidatorMetadata(): Promise<ReceiptValidatorMetadata> {
-    return this.request<ReceiptValidatorMetadata>(
-      '/agent-work-receipts/validate'
-    );
-  }
-
-  /**
-   * Validate a receipt without persisting it. A structurally invalid receipt
-   * is a 422 with the issue list, which this method returns rather than
-   * throwing; check `valid` on the result.
-   */
-  async validateAgentWorkReceipt(
-    receipt: AgentWorkReceipt
-  ): Promise<ReceiptValidationResult> {
-    return this.request<ReceiptValidationResult>(
-      '/agent-work-receipts/validate',
-      { method: 'POST', body: receipt, allowStatuses: [422] }
-    );
-  }
-
-  async getWorkloadDoctorMetadata(): Promise<WorkloadDoctorMetadata> {
-    return this.request<WorkloadDoctorMetadata>('/doctor/workload');
-  }
-
-  async diagnoseWorkloadBoundaries(
-    input: WorkloadDiagnosisRequest
-  ): Promise<WorkloadDiagnosisResponse> {
-    return this.request<WorkloadDiagnosisResponse>('/doctor/workload', {
-      method: 'POST',
-      body: input,
-    });
-  }
-
-  async createEstimate(input: CreateEstimateInput): Promise<EstimateResponse> {
-    return this.request<EstimateResponse>('/studio/estimate', {
-      method: 'POST',
-      body: {
-        prompt: input.prompt,
-        contentTypes: input.contentTypes,
-        ...(input.variantCount !== undefined
-          ? { variantCount: input.variantCount }
-          : {}),
-        ...(input.brandUrl ? { brandUrl: input.brandUrl } : {}),
-        ...(input.brandId ? { brandId: input.brandId } : {}),
-        ...(input.platform ? { platform: input.platform } : {}),
-      },
-    });
-  }
-
-  async getShowcase(options: GetShowcaseOptions = {}): Promise<ShowcaseResponse> {
-    const params = new URLSearchParams();
-    if (options.query) params.set('query', options.query);
-    if (options.contentType) params.set('contentType', options.contentType);
-    if (options.industry) params.set('industry', options.industry);
-    if (options.style) params.set('style', options.style);
-    if (options.featured !== undefined)
-      params.set('featured', String(options.featured));
-    if (options.limit !== undefined) params.set('limit', String(options.limit));
-    if (options.offset !== undefined)
-      params.set('offset', String(options.offset));
-    const query = params.toString();
-    return this.request<ShowcaseResponse>(
-      `/studio/showcase${query ? `?${query}` : ''}`
-    );
-  }
-
-  async createCheckout(estimateId: string): Promise<CheckoutResponse> {
-    return this.request<CheckoutResponse>('/studio/checkout', {
-      method: 'POST',
-      body: { estimateId },
-    });
-  }
-
-  // POST /studio/callback is intentionally not exposed: it is the Stripe
-  // webhook receiver and is never called by API clients.
-
-  async listWork(
-    workspaceId: string,
-    options: ListWorkOptions = {}
-  ): Promise<ApiEnvelope<WorkTask[]>> {
-    const params = new URLSearchParams({ workspace_id: workspaceId });
-    if (options.initiativeId)
-      params.set('initiative_id', options.initiativeId);
-    if (options.status) params.set('status', options.status);
-    if (options.updatedSince)
-      params.set('updated_since', options.updatedSince);
-    if (options.cursor) params.set('cursor', options.cursor);
-    if (options.limit !== undefined) params.set('limit', String(options.limit));
-    return this.request<ApiEnvelope<WorkTask[]>>(`/work?${params.toString()}`);
-  }
-
-  async getWorkTask(
-    workspaceId: string,
-    taskId: string
-  ): Promise<WorkTaskDetail> {
-    const response = await this.request<ApiEnvelope<WorkTaskDetail>>(
-      `/work/${encodeURIComponent(taskId)}?workspace_id=${encodeURIComponent(
-        workspaceId
-      )}`
-    );
-    return response.data;
-  }
-
-  /**
-   * Scaffold a minimal initiative (title/summary variant of
-   * POST /initiatives). Committing a proposal or an inline plan through the
-   * same endpoint is exposed as `commitInitiativeProposal` and
-   * `commitInitiativePlan`.
-   */
-  async scaffoldInitiative(
-    input: ScaffoldInitiativeInput
-  ): Promise<ApiEnvelope<InitiativeScaffoldData>> {
-    return this.request<ApiEnvelope<InitiativeScaffoldData>>('/initiatives', {
-      method: 'POST',
-      idempotencyKey: input.idempotencyKey,
-      body: {
-        ...(input.workspaceId ? { workspace_id: input.workspaceId } : {}),
-        title: input.title,
-        ...(input.summary !== undefined ? { summary: input.summary } : {}),
-      },
-    });
-  }
-
-  async commitInitiativeProposal(
-    input: CommitInitiativeProposalInput
-  ): Promise<ApiEnvelope<InitiativeCommitData>> {
-    return this.request<ApiEnvelope<InitiativeCommitData>>('/initiatives', {
-      method: 'POST',
-      idempotencyKey: input.idempotencyKey,
-      body: {
-        ...(input.workspaceId ? { workspace_id: input.workspaceId } : {}),
-        proposal_id: input.proposalId,
-        proposal_digest: input.proposalDigest,
-        ...(input.initiativeId ? { initiative_id: input.initiativeId } : {}),
-        ...(input.overrides ? { overrides: input.overrides } : {}),
-      },
-    });
-  }
-
-  async commitInitiativePlan(
-    input: CommitInitiativePlanInput
-  ): Promise<ApiEnvelope<InitiativeCommitData>> {
-    return this.request<ApiEnvelope<InitiativeCommitData>>('/initiatives', {
-      method: 'POST',
-      idempotencyKey: input.idempotencyKey,
-      body: {
-        ...(input.workspaceId ? { workspace_id: input.workspaceId } : {}),
-        plan: input.plan,
-        plan_digest: input.planDigest,
-        ...(input.initiativeId ? { initiative_id: input.initiativeId } : {}),
-        ...(input.overrides ? { overrides: input.overrides } : {}),
-      },
-    });
-  }
-
-  async getInitiative(
-    initiativeId: string,
-    options: { workspaceId?: string; include?: string } = {}
-  ): Promise<ApiEnvelope<InitiativeDetail>> {
-    const params = new URLSearchParams();
-    if (options.workspaceId) params.set('workspace_id', options.workspaceId);
-    if (options.include) params.set('include', options.include);
-    const query = params.toString();
-    return this.request<ApiEnvelope<InitiativeDetail>>(
-      `/initiatives/${encodeURIComponent(initiativeId)}${
-        query ? `?${query}` : ''
-      }`
-    );
-  }
-
-  async proposeInitiativeScaffold(
-    input: ProposeInitiativeScaffoldInput
-  ): Promise<ApiEnvelope<InitiativeProposal>> {
-    return this.request<ApiEnvelope<InitiativeProposal>>(
-      '/initiatives/proposals',
-      {
-        method: 'POST',
-        idempotencyKey: input.idempotencyKey,
-        body: {
-          ...(input.workspaceId ? { workspace_id: input.workspaceId } : {}),
-          title: input.title,
-          ...(input.summary !== undefined ? { summary: input.summary } : {}),
-          ...(input.prompt ? { prompt: input.prompt } : {}),
-          ...(input.goalIds ? { goal_ids: input.goalIds } : {}),
-          ...(input.context ? { context: input.context } : {}),
-          ...(input.depth ? { depth: input.depth } : {}),
-          ...(input.workstreams ? { workstreams: input.workstreams } : {}),
-          ...(input.agentAssignment
-            ? { agent_assignment: input.agentAssignment }
-            : {}),
-          ...(input.generation ? { generation: input.generation } : {}),
-          ...(input.sourceEvidence
-            ? { source_evidence: input.sourceEvidence }
-            : {}),
-        },
-      }
-    );
-  }
-
-  async getInitiativeScaffoldProposal(
-    proposalId: string,
-    options: { workspaceId?: string } = {}
-  ): Promise<ApiEnvelope<InitiativeProposalDetail>> {
-    const params = new URLSearchParams();
-    if (options.workspaceId) params.set('workspace_id', options.workspaceId);
-    const query = params.toString();
-    return this.request<ApiEnvelope<InitiativeProposalDetail>>(
-      `/initiatives/proposals/${encodeURIComponent(proposalId)}${
-        query ? `?${query}` : ''
-      }`
-    );
-  }
-
-  async listArtifactTypes(): Promise<ArtifactTypeListResult> {
-    return this.request<ArtifactTypeListResult>('/artifact-types');
-  }
-
-  async createDecision(input: CreateDecisionInput): Promise<Decision> {
-    const response = await this.request<{ decision: Decision }>('/decisions', {
-      method: 'POST',
-      idempotencyKey: input.idempotencyKey,
-      body: {
-        workspace_id: input.workspaceId,
-        title: input.title,
-        ...(input.shape ? { shape: input.shape } : {}),
-        ...(input.shapeContext ? { shape_context: input.shapeContext } : {}),
-        ...(input.urgency ? { urgency: input.urgency } : {}),
-        ...(input.blocksTask !== undefined
-          ? { blocks_task: input.blocksTask }
-          : {}),
-        ...(input.taskId ? { task_id: input.taskId } : {}),
-        ...(input.initiativeId ? { initiative_id: input.initiativeId } : {}),
-      },
-    });
-    return response.decision;
-  }
-
-  async listDecisions(
-    workspaceId: string,
-    options: ListDecisionsOptions = {}
-  ): Promise<Decision[]> {
-    const params = new URLSearchParams({ workspace_id: workspaceId });
-    if (options.shape) params.set('shape', options.shape);
-    if (options.urgency) params.set('urgency', options.urgency);
-    if (options.status) params.set('status', options.status);
-    if (options.limit !== undefined) params.set('limit', String(options.limit));
-    const response = await this.request<{ decisions: Decision[] }>(
-      `/decisions?${params.toString()}`
-    );
-    return response.decisions;
-  }
-
-  async createArtifact(
-    input: CreateArtifactInput
-  ): Promise<ArtifactCreateResult> {
-    return this.request<ArtifactCreateResult>('/artifacts', {
-      method: 'POST',
-      idempotencyKey: input.idempotencyKey,
-      body: {
-        entity_type: input.entityType,
-        entity_id: input.entityId,
-        name: input.name,
-        artifact_type: input.artifactType,
-        ...(input.artifactUrl ? { artifact_url: input.artifactUrl } : {}),
-        ...(input.externalUrl ? { external_url: input.externalUrl } : {}),
-        ...(input.previewMarkdown
-          ? { preview_markdown: input.previewMarkdown }
-          : {}),
-        ...(input.initiativeId ? { initiative_id: input.initiativeId } : {}),
-        ...(input.status ? { status: input.status } : {}),
-        ...(input.metadata ? { metadata: input.metadata } : {}),
-        ...(input.createdByType
-          ? { created_by_type: input.createdByType }
-          : {}),
-        ...(input.createdById ? { created_by_id: input.createdById } : {}),
-      },
-    });
-  }
-
-  async listArtifacts(
-    workspaceId: string,
-    options: ListArtifactsOptions = {}
-  ): Promise<Artifact[]> {
-    const params = new URLSearchParams({ workspace_id: workspaceId });
-    if (options.initiativeId)
-      params.set('initiative_id', options.initiativeId);
-    if (options.taskId) params.set('task_id', options.taskId);
-    if (options.status) params.set('status', options.status);
-    if (options.since) params.set('since', options.since);
-    if (options.limit !== undefined) params.set('limit', String(options.limit));
-    const response = await this.request<{ artifacts: Artifact[] }>(
-      `/artifacts?${params.toString()}`
-    );
-    return response.artifacts;
-  }
-
-  async listArtifactsByEntity(
-    input: ListArtifactsByEntityInput
-  ): Promise<Artifact[]> {
-    const params = new URLSearchParams({
-      entity_type: input.entityType,
-      entity_id: input.entityId,
-    });
-    if (input.kind) params.set('kind', input.kind);
-    if (input.limit !== undefined) params.set('limit', String(input.limit));
-    const response = await this.request<{ ok: boolean; artifacts: Artifact[] }>(
-      `/artifacts/by-entity?${params.toString()}`
-    );
-    return response.artifacts;
-  }
-
-  async getArtifact(artifactId: string): Promise<ArtifactDetailResult> {
-    return this.request<ArtifactDetailResult>(
-      `/artifacts/${encodeURIComponent(artifactId)}`
-    );
-  }
-
-  async controlRun(input: ControlRunInput): Promise<RunActionResult> {
-    return this.request<RunActionResult>(
-      `/runs/${encodeURIComponent(input.runId)}/actions/${input.action}`,
-      {
-        method: 'POST',
-        idempotencyKey: input.idempotencyKey,
-        body: {
-          ...(input.checkpointId ? { checkpointId: input.checkpointId } : {}),
-          ...(input.reason ? { reason: input.reason } : {}),
-        },
-      }
-    );
-  }
-
-  /**
-   * Apply a lifecycle action. A blocked action is a 422 that still carries a
-   * structured LifecycleResult (ok: false, blockReasons), which this method
-   * returns rather than throwing; check `ok` on the result.
-   */
-  async applyLifecycleAction(
-    input: ApplyLifecycleActionInput
-  ): Promise<LifecycleResult> {
-    return this.request<LifecycleResult>('/lifecycle', {
-      method: 'POST',
-      idempotencyKey: input.idempotencyKey,
-      allowStatuses: [422],
-      body: {
-        level: input.level,
-        id: input.id,
-        action: input.action,
-      },
-    });
-  }
-
-  async claimDedupFingerprint(
-    input: ClaimDedupFingerprintInput
-  ): Promise<DedupClaimResult> {
-    return this.request<DedupClaimResult>('/live/dedup/claim', {
-      method: 'POST',
-      idempotencyKey: input.idempotencyKey,
-      body: {
-        source: input.source,
-        event_key: input.eventKey,
-        ...(input.initiativeId ? { initiative_id: input.initiativeId } : {}),
-        ...(input.ttlSeconds !== undefined
-          ? { ttl_seconds: input.ttlSeconds }
-          : {}),
-        ...(input.activeRunId ? { active_run_id: input.activeRunId } : {}),
-      },
-    });
-  }
-
-  private async transitionHandoff(
-    action: 'return' | 'escalate' | 'cancel',
-    input: HandoffTransitionInput
-  ): Promise<Handoff> {
-    const response = await this.request<ApiEnvelope<Handoff>>(
-      `/handoffs/${encodeURIComponent(input.handoffId)}/${action}`,
-      {
-        method: 'POST',
-        idempotencyKey: input.idempotencyKey,
-        body: {
-          workspace_id: input.workspaceId,
-          expected_aggregate_version: input.expectedAggregateVersion,
-        },
-      }
-    );
-    return response.data;
-  }
-
   private async transitionOperatingProcess(
     action: 'confirm' | 'activate',
     input: {
@@ -1495,11 +815,6 @@ export class OrgXClient {
       method?: 'GET' | 'POST';
       body?: unknown;
       idempotencyKey?: string;
-      /**
-       * Non-2xx statuses whose response body is a documented, structured
-       * result (e.g. validation failures) rather than an error envelope.
-       */
-      allowStatuses?: number[];
     } = {}
   ): Promise<T> {
     const headers = new Headers({ accept: 'application/json' });
@@ -1518,7 +833,7 @@ export class OrgXClient {
       | { error?: { code?: string; message?: string; details?: unknown } }
       | T
       | null;
-    if (!response.ok && !options.allowStatuses?.includes(response.status)) {
+    if (!response.ok) {
       const error =
         payload && typeof payload === 'object' && 'error' in payload
           ? payload.error

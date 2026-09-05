@@ -75,6 +75,9 @@ import type {
 
 export * from './types.js';
 
+import type { ContextPreparation, ContextPreparationInput } from './context.js';
+export type { ContextPreparation, ContextPreparationInput, ContextDelivery } from './context.js';
+
 export type DiscoveryRunMode = 'bounded_sync' | 'deep_search' | 'reconcile';
 export type DiscoveryRunStatus =
   | 'queued'
@@ -539,6 +542,27 @@ export class OrgXClient {
     );
     this.token = options.apiKey ?? options.token;
     this.fetchImpl = options.fetch ?? globalThis.fetch;
+  }
+
+  /** Prepare current context. Returned references do not grant action authority. */
+  async prepareContext(input: ContextPreparationInput): Promise<ContextPreparation> {
+    const response = await this.request<ApiEnvelope<ContextPreparation>>('/context-pack', {
+      method: 'POST', body: input,
+    });
+    return response.data;
+  }
+
+  /** Safe full rebootstrap until the server can verify a coherent delta base. */
+  async syncContext(input: ContextPreparationInput & { acknowledged_capsule_id: string }): Promise<ContextPreparation> {
+    return this.prepareContext(input);
+  }
+
+  /** Dereference an OrgX artifact through the existing authenticated API. */
+  async expandContextEvidence(artifactId: string): Promise<Record<string, unknown>> {
+    const response = await this.request<ApiEnvelope<Record<string, unknown>>>(
+      `/artifacts/${encodeURIComponent(artifactId)}`
+    );
+    return response.data;
   }
 
   async startDiscoveryRun(

@@ -1,6 +1,6 @@
 {
   "name": "@useorgx/sdk",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "TypeScript client for the OrgX v1 API",
   "license": "SEE LICENSE IN LICENSE",
   "author": "OrgX Team <team@useorgx.com>",

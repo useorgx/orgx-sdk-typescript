@@ -22,6 +22,8 @@ export interface ContextDelivery {
 }
 
 export interface ContextPreparationInput {
+  /** Compact direct delivery; use full context for delta transfer. */
+  response_profile?: 'full' | 'prepared';
   workspace_id: string;
   initiative_id?: string;
   workstream_id?: string;

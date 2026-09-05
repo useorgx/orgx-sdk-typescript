@@ -76,6 +76,8 @@ import type {
 export * from './types.js';
 
 import type { ContextPreparation, ContextPreparationInput } from './context.js';
+import { applyContextTransfer, type ContextContinuation } from './continuation.js';
+export { applyContextTransfer, type ContextContinuation } from './continuation.js';
 export type { ContextPreparation, ContextPreparationInput, ContextDelivery } from './context.js';
 
 export type DiscoveryRunMode = 'bounded_sync' | 'deep_search' | 'reconcile';
@@ -553,14 +555,56 @@ export class OrgXClient {
   }
 
   /** Safe full rebootstrap until the server can verify a coherent delta base. */
-  async syncContext(input: ContextPreparationInput & { acknowledged_capsule_id: string }): Promise<ContextPreparation> {
-    return this.prepareContext(input);
+  async syncContext(
+    input: ContextPreparationInput & { acknowledged_capsule_id: string }
+  ): Promise<ContextPreparation>;
+  /** Pass null for a fresh portable base; pass that result for acknowledged deltas. */
+  async syncContext(
+    input: ContextPreparationInput,
+    previous: ContextContinuation | null
+  ): Promise<ContextContinuation>;
+  async syncContext(
+    input: ContextPreparationInput,
+    previous?: ContextContinuation | null
+  ): Promise<ContextPreparation | ContextContinuation> {
+    if (previous === undefined) return this.prepareContext(input);
+    const {
+      acknowledged_capsule_id: _legacy,
+      acknowledged_context_version: _version,
+      ...scope
+    } = input;
+    const response = await this.prepareContext({
+      ...scope,
+      delivery_mode: 'delta',
+      ...(previous ? { acknowledged_context_version: previous.version } : {}),
+    });
+    try {
+      return await applyContextTransfer(response, previous);
+    } catch (error) {
+      if (!previous) throw error;
+      // One authenticated fresh read repairs an evicted or corrupted local base.
+      return applyContextTransfer(
+        await this.prepareContext({ ...scope, delivery_mode: 'delta' })
+      );
+    }
   }
 
   /** Dereference an OrgX artifact through the existing authenticated API. */
-  async expandContextEvidence(artifactId: string): Promise<Record<string, unknown>> {
+  async expandContextEvidence(
+    artifactId: string,
+    expectedVersion?: number
+  ): Promise<Record<string, unknown>> {
+    if (
+      expectedVersion !== undefined &&
+      (!Number.isSafeInteger(expectedVersion) || expectedVersion < 1)
+    )
+      throw new Error('Artifact version must be a positive integer');
     const response = await this.request<ApiEnvelope<Record<string, unknown>>>(
-      `/artifacts/${encodeURIComponent(artifactId)}`
+      `/artifacts/${encodeURIComponent(artifactId)}${
+        expectedVersion === undefined
+          ? ''
+          : `?expected_version=${expectedVersion}`
+      }`
     );
     return response.data;
   }

@@ -7,6 +7,9 @@
  * lifecycle rules.
  */
 
+import { ControllerOperations } from './controllers.js';
+export type { ControllerDomain, ControllerApiResult, ReconcileControllerInput } from './controllers.js';
+
 import type {
   AdoptionProjection,
   MeterUsageProjection,
@@ -532,12 +535,13 @@ export interface ClaimDedupFingerprintInput {
   idempotencyKey?: string;
 }
 
-export class OrgXClient {
+export class OrgXClient extends ControllerOperations {
   private readonly baseUrl: string;
   private readonly token: string | undefined;
   private readonly fetchImpl: typeof globalThis.fetch;
 
   constructor(options: OrgXClientOptions = {}) {
+    super();
     this.baseUrl = (options.baseUrl ?? 'https://useorgx.com/api/v1').replace(
       /\/$/,
       ''
@@ -1533,7 +1537,7 @@ export class OrgXClient {
     });
   }
 
-  private async request<T>(
+  protected async request<T>(
     path: string,
     options: {
       method?: 'GET' | 'POST';

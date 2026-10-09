@@ -10,7 +10,7 @@
  */
 
 /* ------------------------------------------------------------------ */
-/* Agent Work Receipt (agent-work-receipt/v0.1)                        */
+/* Agent Work Receipt (portable v0.1/v0.2)                             */
 /* ------------------------------------------------------------------ */
 
 export interface AwrDigest {
@@ -57,6 +57,27 @@ export interface AwrIntent {
   constraints?: string[];
   request_ref?: AwrExternalReference;
   metadata?: Record<string, unknown>;
+  /** Portable v0.2 named criteria and expected outcomes. */
+  criteria?: AwrCriterion[];
+  expected_outcomes?: AwrExpectedOutcome[];
+}
+
+export interface AwrCriterion {
+  id: string;
+  text: string;
+  kind?: string;
+  required?: boolean;
+  source?: 'requested' | 'inferred' | 'policy' | 'agent_proposed';
+}
+
+export interface AwrExpectedOutcome {
+  id: string;
+  description: string;
+  metric?: string;
+  unit?: string;
+  min?: number;
+  max?: number;
+  target?: number;
 }
 
 export interface AwrMoneyLimit {
@@ -164,6 +185,25 @@ export interface AwrOutcome {
   metrics?: AwrOutcomeMetric[];
   acceptance?: AwrAcceptance;
   metadata?: Record<string, unknown>;
+  criteria_results?: AwrCriterionResult[];
+  expected_results?: AwrExpectedResult[];
+}
+
+export interface AwrCriterionResult {
+  criterion_id: string;
+  status: 'met' | 'unmet' | 'unknown' | 'waived';
+  evidence_ids: string[];
+  confidence?: number;
+  decided_by?: AwrActor;
+  notes?: string;
+}
+
+export interface AwrExpectedResult {
+  expected_id: string;
+  status: 'within' | 'outside' | 'unknown';
+  observed?: number | string;
+  evidence_ids: string[];
+  confidence?: number;
 }
 
 export interface AwrVerificationCheck {
@@ -173,6 +213,7 @@ export interface AwrVerificationCheck {
   method?: string;
   evidence_ids: string[];
   details?: string;
+  criterion_ids?: string[];
 }
 
 export interface AwrVerification {
@@ -189,6 +230,7 @@ export interface AwrVerification {
 export interface AwrCostComponent {
   category: string;
   amount: number;
+  description?: string;
 }
 
 export interface AwrUsage {
@@ -211,6 +253,7 @@ export interface AwrCost {
 export interface AwrLineageEdge {
   relationship: string;
   ref: AwrExternalReference;
+  confidence?: number;
 }
 
 export interface AwrLineage {
@@ -220,6 +263,7 @@ export interface AwrLineage {
   trace_id?: string;
   span_id?: string;
   metadata?: Record<string, unknown>;
+  workstream_ref?: AwrExternalReference;
 }
 
 export interface AwrHumanIntervention {
@@ -270,8 +314,32 @@ export interface AwrIntegrity {
   signatures?: AwrSignature[];
 }
 
+export type AgentWorkReceiptSchemaVersion =
+  | 'agent-work-receipt/v0.1'
+  | 'agent-work-receipt/v0.2';
+
+export interface AwrProvenanceEntry {
+  path: string;
+  basis: 'observed' | 'declared' | 'inferred' | 'human';
+  confidence?: number;
+  method?: string;
+  by?: AwrActor;
+  at?: string;
+}
+
+export interface AwrTrajectoryStep {
+  id: string;
+  kind: 'change_of_course' | 'retry' | 'escalation' | 'handoff' | 'compaction' | 'pause' | 'resume';
+  summary: string;
+  trigger?: 'error' | 'denial' | 'human' | 'self' | 'policy' | 'timeout' | 'other';
+  occurred_at?: string;
+  action_ids?: string[];
+  evidence_ids?: string[];
+  confidence?: number;
+}
+
 export interface AgentWorkReceipt {
-  schema_version: 'agent-work-receipt/v0.1';
+  schema_version: AgentWorkReceiptSchemaVersion;
   receipt_id: string;
   intent: AwrIntent;
   actor: AwrActor;
@@ -287,13 +355,15 @@ export interface AgentWorkReceipt {
   timestamps: AwrTimestamps;
   integrity?: AwrIntegrity;
   extensions?: Record<string, unknown>;
+  provenance?: AwrProvenanceEntry[];
+  trajectory?: AwrTrajectoryStep[];
 }
 
 export interface ReceiptImportSuccess {
   ok: true;
   receipt_id: string;
   external_receipt_id: string;
-  schema_version: 'agent-work-receipt/v0.1';
+  schema_version: AgentWorkReceiptSchemaVersion;
   idempotent: boolean;
   imported_at?: string;
   pilot?: { cohort_id: string; partner_ref: string } | null;
@@ -326,7 +396,7 @@ export interface ReceiptValidatorMetadata {
 export interface ReceiptValidationSuccess {
   ok: true;
   valid: true;
-  schema_version: 'agent-work-receipt/v0.1';
+  schema_version: AgentWorkReceiptSchemaVersion;
   schema_url: string;
   receipt: {
     receipt_id: string;

@@ -1,0 +1,30 @@
+/** @type {import('../src/types.js').AgentWorkReceipt} */
+export const receipt = {
+  schema_version: 'agent-work-receipt/v0.2', receipt_id: 'urn:receipt:portable-v02',
+  intent: {
+    summary: 'Record a portable execution',
+    criteria: [{ id: 'criterion', text: 'Keep the complete document', source: 'requested' }],
+    expected_outcomes: [{ id: 'expected', description: 'No fields lost', metric: 'lost', target: 0 }],
+  },
+  actor: { type: 'agent', id: 'producer' },
+  authority: { mode: 'explicit', status: 'granted', scope: { actions: ['record'], resources: [] } },
+  actions: [{ id: 'action', type: 'write', summary: 'Produce the record', status: 'completed' }],
+  artifacts: [],
+  evidence: [{ id: 'evidence', kind: 'test', summary: 'Round-trip verification', observed_at: '2026-10-08T00:00:00Z' }],
+  outcome: {
+    status: 'succeeded', summary: 'Recorded',
+    criteria_results: [{ criterion_id: 'criterion', status: 'met', evidence_ids: ['evidence'], confidence: 0.8 }],
+    expected_results: [{ expected_id: 'expected', status: 'within', observed: 0, evidence_ids: ['evidence'] }],
+  },
+  verification: { status: 'passed', method: 'producer test', evidence_ids: ['evidence'],
+    checks: [{ id: 'check', name: 'Round-trip', status: 'passed', evidence_ids: ['evidence'], criterion_ids: ['criterion'] }] },
+  cost: { currency: 'USD', total: 0, components: [{ category: 'test', amount: 0, description: 'Local test' }] },
+  lineage: { parent_receipt_refs: [], references: [{ relationship: 'input', ref: { system: 'repo', type: 'commit', id: 'commit' }, confidence: 1 }],
+    workstream_ref: { system: 'orgx', type: 'workstream', id: 'stream' } },
+  human_interventions: [],
+  timestamps: { started_at: '2026-10-08T00:00:00Z', completed_at: '2026-10-08T00:00:01Z', issued_at: '2026-10-08T00:00:02Z' },
+  integrity: { content_hash: { algorithm: 'sha-256', encoding: 'hex', value: 'a'.repeat(64) } },
+  provenance: [{ path: '/verification/status', basis: 'declared', confidence: 0.8, by: { type: 'agent', id: 'producer' } }],
+  trajectory: [{ id: 'step', kind: 'retry', summary: 'Retried the original operation', trigger: 'timeout', action_ids: ['action'], evidence_ids: ['evidence'] }],
+  extensions: { 'example.org/opaque': { nested: ['retain', { payload: true }] } },
+};

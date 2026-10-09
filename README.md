@@ -75,3 +75,10 @@ const result = await client.reconcileController({
 ```
 
 Reuse the same idempotency key only when retrying the same request. Both calls return the server envelope, including receipts and limitations. A healthy historical run does not establish current enablement; inspect the reported limitations. Reconciliation creates shadow proposals for human review and grants no execution or policy authority. The server validates workspace access, activation, revision and evidence freshness.
+
+Portable Agent Work Receipt inputs and successful import/validation responses
+accept v0.1 and v0.2. The SDK preserves criteria, expected results, provenance,
+trajectory, integrity, lineage, and namespaced extensions when forwarding a
+document. The server validator owns version and reference semantics; producer
+claims do not establish human acceptance. Gateway run receipts are a separate
+contract. These source changes are unpublished.
